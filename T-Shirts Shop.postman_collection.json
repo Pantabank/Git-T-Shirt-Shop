@@ -1,0 +1,127 @@
+{
+	"info": {
+		"_postman_id": "b551aafb-673a-416b-b64f-e1283b4e2c4b",
+		"name": "T-Shirts Shop",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "21430089"
+	},
+	"item": [
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Create Products",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"pantabank\",\r\n    \"password\": \"12345678910\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:5000/v1/users",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5000",
+							"path": [
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Product Lists and Filters.",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5000/v1/products/filters?gender=Men&types=patterns",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5000",
+							"path": [
+								"v1",
+								"products",
+								"filters"
+							],
+							"query": [
+								{
+									"key": "gender",
+									"value": "Men"
+								},
+								{
+									"key": "types",
+									"value": "patterns"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Create Orders",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"product_id\": 2,\r\n    \"gender\": \"Men\",\r\n    \"shipping_address\": {\r\n        \"product_id\": 150,\r\n\t    \"first_name\": \"Pantha\",\r\n\t    \"last_name\": \"Karn\",\r\n\t    \"sub_district\": \"Khok Kram\",\r\n\t    \"district\": \"Bang Plama\",\r\n\t    \"province\": \"Suphan Buri\",\r\n\t    \"postcode\": 72150,\r\n\t    \"tel\": 6864455678\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:5000/v1/orders/create",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5000",
+							"path": [
+								"v1",
+								"orders",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Order Lists and Filters.",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
