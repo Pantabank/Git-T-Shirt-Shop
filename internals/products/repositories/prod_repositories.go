@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pantabank/t-shirts-shop/internals/entities"
@@ -33,11 +34,13 @@ func (r *productsRepo) AddProduct(req *entities.ProductReq) (*entities.ProductRe
 	`
 
 	user := new(entities.ProductRes)
-	rows, err := r.Db.Queryx(query, req.Gender, req.StyleType, req.StyleDetail, req.Size, req.Price, `TRUE`)
+	rows, err := r.Db.Queryx(query, strings.ToLower(req.Gender), strings.ToLower(req.StyleType), req.StyleDetail, strings.ToLower(req.Size), req.Price, `TRUE`)
 	if err != nil {
+		defer rows.Close()
 		fmt.Println(err.Error())
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.StructScan(user); err != nil {
@@ -54,15 +57,15 @@ func (r *productsRepo) GetProduct(req *entities.ParamsFilters)(list []*entities.
 	query := `SELECT * FROM products WHERE enable=true`
 
 	if req.Gender != "" {
-		query += fmt.Sprintf(" AND gender='%v'", req.Gender)
+		query += fmt.Sprintf(" AND gender='%v'", strings.ToLower(req.Gender))
 	}
 
 	if req.StyleType != "" {
-		query += fmt.Sprintf(" AND style_type='%v'", req.StyleType)
+		query += fmt.Sprintf(" AND style_type='%v'", strings.ToLower(req.StyleType))
 	}
 
 	if req.Size != "" {
-		query += fmt.Sprintf(" AND size='%v'", req.Size)
+		query += fmt.Sprintf(" AND size='%v'", strings.ToLower(req.Size))
 	}
 
 	pages := req.PerPage * (req.Page - 1)

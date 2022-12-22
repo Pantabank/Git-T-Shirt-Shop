@@ -11,12 +11,12 @@ import (
 
 type OrderRepository interface {
 	CreateOrders(req *OrdersReq2)(*OrdersRes2, error)
-	GetOrder(req *QueryParams)([]*OrdersRes, error)
+	GetOrder(req *QueryParams)([]*GetOrderRes, error)
 }
 
 type OrderUsecase interface {
 	CreateOrders(req *OrdersReq2)(*OrdersRes2, error)
-	GetOrder(req *QueryParams)([]*OrdersRes, error)
+	GetOrder(req *QueryParams)([]*GetOrderRes, error)
 }
 
 type QueryParams struct {
@@ -35,11 +35,11 @@ type OrdersReq2 struct {
 
 type OrdersRes2 struct {
 	Id			int `json:"id" db:"id"`
-	Shipping 	*Shipping `json:"shipping_address"`
 	OrderID		int `json:"order_id" db:"order_id"`
-	Product 	ProductItem `json:"products" db:"products"`
-	Price 		int `json:"price" db:"price"`
 	Qty 		int `json:"qty" db:"qty"`
+	Price 		int `json:"price" db:"price"`
+	Shipping 	Shipping `json:"shipping_address" db:"shipping_address"`
+	Product 	ProductItem `json:"products" db:"products"`
 }
 
 type ProductItem struct {
@@ -105,6 +105,14 @@ type AddressItem struct {
 	Tel				string `json:"tel"`
 }
 
+type GetOrderRes struct {
+	ID			int `json:"id" db:"id"`
+	OrderID		int `json:"order_id" db:"order_id"`
+	Products	*ProductItem `json:"products" db:"products"`
+	Qty			int	`json:"qty" db:"db"`
+	Price		int `json:"price" db:"price"`	
+}
+
 
 
 func (s ProductItem) Value() (driver.Value, error) {
@@ -112,6 +120,18 @@ func (s ProductItem) Value() (driver.Value, error) {
 }
 
 func (s *ProductItem) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &s)
+}
+
+func (s Shipping) Value() (driver.Value, error) {
+	return json.Marshal(s)
+}
+
+func (s *Shipping) Scan(value interface{}) error {
 	b, ok := value.([]byte)
 	if !ok {
 		return errors.New("type assertion to []byte failed")

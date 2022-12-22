@@ -4,7 +4,8 @@ import (
 	//"encoding/json"
 
 	"fmt"
-	//"time"
+	"strings"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pantabank/t-shirts-shop/internals/entities"
@@ -22,19 +23,23 @@ func NewOrdersRepository(db *sqlx.DB) entities.OrderRepository {
 
 func (r *ordersRepo) CreateOrders(req *entities.OrdersReq2) (*entities.OrdersRes2, error) {
 	query := `
+	WITH create_shipping AS (
+		INSERT INTO "orders" ("shipping_address", "status", "created_at") 
+		VALUES ($4, 'placed_order', $5)
+		RETURNING id, shipping_address
+	)
 		INSERT INTO "product_order"(
 			"order_id",
 			"products",
 			"qty",
 			"price"
 		)
-		VALUES ($1, $2, $3, $4)
-		RETURNING "id", "order_id", "price", "qty", "products";
+		VALUES ((select id from create_shipping), $1, $2, $3)
+		RETURNING "id", (select shipping_address from create_shipping), "order_id", "price", "qty", "products";
 	`
 
 	order := new(entities.OrdersRes2)
-	//times := time.Now()
-
+	times := time.Now()
 	collections := make(map[string][]entities.Product)
 	product := []entities.Product{}
 	var totalQty, totalPrice int
@@ -42,7 +47,7 @@ func (r *ordersRepo) CreateOrders(req *entities.OrdersReq2) (*entities.OrdersRes
 	for _, v := range req.Product.Item {
 		//fmt.Println(v.Id)
 		productRes, err := r.QueryCart(v.Id)
-		p := entities.Product{Id: productRes.Id, Gender: productRes.Gender, StyleType: productRes.StyleType, StyleDetail: productRes.StyleDetail, Size: productRes.Size, Price: productRes.Price, Qty: v.Qty, TotalPrice: productRes.Price * float64(v.Qty)}
+		p := entities.Product{Id: productRes.Id, Gender: strings.ToLower(productRes.Gender), StyleType: strings.ToLower(productRes.StyleType), StyleDetail: productRes.StyleDetail, Size: strings.ToLower(productRes.Size), Price: productRes.Price, Qty: v.Qty, TotalPrice: productRes.Price * float64(v.Qty)}
 		if err != nil {
 			fmt.Println(err.Error())
 		}
@@ -53,7 +58,7 @@ func (r *ordersRepo) CreateOrders(req *entities.OrdersReq2) (*entities.OrdersRes
 
 	collections["item"] = append(collections["item"], product...)
 
-	rows, err := r.Db.Queryx(query, 142, collections, totalQty, totalPrice)
+	rows, err := r.Db.Queryx(query, collections, totalQty, totalPrice, req.Shipping, times)
 
 		if err != nil {
 			fmt.Println(err.Error())
@@ -83,17 +88,17 @@ func (r *ordersRepo) QueryCart(id int)(*entities.Product, error){
 
 }
 
-func (r *ordersRepo) GetOrder(params *entities.QueryParams) (list []*entities.OrdersRes, err error){
-	lists := make([]*entities.OrdersRes, 0)
-	query := `SELECT id, product_id, gender, style_type, style_detail, size, price, shipping_address, status, created_at FROM orders WHERE enable=true`
+func (r *ordersRepo) GetOrder(params *entities.QueryParams) (list []*entities.GetOrderRes, err error){
+	lists := make([]*entities.GetOrderRes, 0)
+	query := `SELECT id, order_id, products, qty, price FROM product_order`
 
-	if params.Sdate != "" && params.Edate != "" {
-		query += fmt.Sprintf(" AND DATE(created_at) BETWEEN '%v' AND '%v'", params.Sdate, params.Edate)
-	}
+	// if params.Sdate != "" && params.Edate != "" {
+	// 	query += fmt.Sprintf(" AND DATE(created_at) BETWEEN '%v' AND '%v'", params.Sdate, params.Edate)
+	// }
 
-	if params.Status != "" {
-		query += fmt.Sprintf(" AND status='%v'", params.Status)
-	}
+	// if params.Status != "" {
+	// 	query += fmt.Sprintf(" AND status='%v'", strings.ToLower(params.Status))
+	// }
 
 	pages := params.PerPage * (params.Page - 1)
 	query += fmt.Sprintf(` LIMIT %d OFFSET %d`, params.PerPage, pages)
@@ -106,9 +111,9 @@ func (r *ordersRepo) GetOrder(params *entities.QueryParams) (list []*entities.Or
 	defer rows.Close()
 
 	for rows.Next(){
-		orders := new(entities.OrdersRes)
+		orders := new(entities.GetOrderRes)
 		fmt.Println(params.Page)
-		err := rows.Scan(&orders.Id, &orders.ProductID, &orders.Gender, &orders.StyleType, &orders.StyleDetail, &orders.Size, &orders.Price, &orders.ShippingAddress, &orders.Status, &orders.CreatedAt)
+		err := rows.Scan(&orders.ID, &orders.OrderID, &orders.Products, &orders.Qty, &orders.Price)
 		if err != nil{
 			return nil, err
 		}
