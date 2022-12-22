@@ -62,8 +62,9 @@ type Product struct {
 	StyleType	string `json:"style_type" db:"style_type"`
 	StyleDetail	string `json:"style_detail" db:"style_detail"`
 	Size	string `json:"size" db:"size"`
-	Price	int `json:"price" db:"price"`
+	Price	float64 `json:"price" db:"price"`
 	Qty	int `json:"qty" db:"qty"`
+	TotalPrice float64 `json:"total_price" db:"total_price"`
 }
 
 type OrdersReq struct {

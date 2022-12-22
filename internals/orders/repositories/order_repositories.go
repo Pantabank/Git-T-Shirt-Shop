@@ -2,6 +2,7 @@ package repositories
 
 import (
 	//"encoding/json"
+
 	"fmt"
 	//"time"
 
@@ -27,31 +28,49 @@ func (r *ordersRepo) CreateOrders(req *entities.OrdersReq2) (*entities.OrdersRes
 			"qty",
 			"price"
 		)
-		VALUES ($1, $2, $3, 150)
+		VALUES ($1, $2, $3, $4)
 		RETURNING "id", "order_id", "price", "qty", "products";
 	`
 
 	order := new(entities.OrdersRes2)
-	fmt.Println(req.Product.Item)
 	//times := time.Now()
 
-	rows, err := r.Db.Queryx(query, 142, req.Product, 5)
-	if err != nil {
-		fmt.Println(err.Error())
-		return nil, err
+	collections := make(map[string][]entities.Product)
+	product := []entities.Product{}
+	var totalQty, totalPrice int
+
+	for _, v := range req.Product.Item {
+		//fmt.Println(v.Id)
+		productRes, err := r.QueryCart(v.Id)
+		p := entities.Product{Id: productRes.Id, Gender: productRes.Gender, StyleType: productRes.StyleType, StyleDetail: productRes.StyleDetail, Size: productRes.Size, Price: productRes.Price, Qty: v.Qty, TotalPrice: productRes.Price * float64(v.Qty)}
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		totalQty += v.Qty
+		totalPrice += int(productRes.Price) * v.Qty
+		product = append(product, p)
 	}
 
-	for rows.Next() {
-		if err := rows.StructScan(order); err != nil {
+	collections["item"] = append(collections["item"], product...)
+
+	rows, err := r.Db.Queryx(query, 142, collections, totalQty, totalPrice)
+
+		if err != nil {
 			fmt.Println(err.Error())
 			return nil, err
 		}
-	}
-	fmt.Println(order)
+
+		for rows.Next() {
+			if err := rows.StructScan(order); err != nil {
+				fmt.Println(err.Error())
+				return nil, err
+			}
+		}
+	
 	return order, nil
 }
 
-func (r *ordersRepo) Get1234(id int)(*entities.Product, error){
+func (r *ordersRepo) QueryCart(id int)(*entities.Product, error){
 	query := `select id, gender, style_type, style_detail, size, price from products where id=$1;`
 
 	product := new(entities.Product)
@@ -59,6 +78,8 @@ func (r *ordersRepo) Get1234(id int)(*entities.Product, error){
 	if err := r.Db.Get(product, query, id) ; err != nil{
 		return nil, err
 	}
+
+	return product, nil
 
 }
 
