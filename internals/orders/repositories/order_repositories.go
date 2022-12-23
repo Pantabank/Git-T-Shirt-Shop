@@ -24,18 +24,21 @@ func NewOrdersRepository(db *sqlx.DB) entities.OrderRepository {
 func (r *ordersRepo) CreateOrders(req *entities.OrdersReq2) (*entities.OrdersRes2, error) {
 	query := `
 	WITH create_shipping AS (
-		INSERT INTO "orders" ("shipping_address", "status", "created_at") 
-		VALUES ($4, 'placed_order', $5)
+		INSERT INTO "orders" ("shipping_address") 
+		VALUES ($4)
 		RETURNING id, shipping_address
 	)
 		INSERT INTO "product_order"(
 			"order_id",
 			"products",
 			"qty",
-			"price"
+			"price",
+			"status",
+			"created_at",
+			"enable"
 		)
-		VALUES ((select id from create_shipping), $1, $2, $3)
-		RETURNING "id", (select shipping_address from create_shipping), "order_id", "price", "qty", "products";
+		VALUES ((select id from create_shipping), $1, $2, $3, 'placed_order', $5, true)
+		RETURNING "id", (select shipping_address from create_shipping), "order_id", "price", "qty", "products", "status", "created_at";
 	`
 
 	order := new(entities.OrdersRes2)
@@ -90,18 +93,18 @@ func (r *ordersRepo) QueryCart(id int)(*entities.Product, error){
 
 func (r *ordersRepo) GetOrder(params *entities.QueryParams) (list []*entities.GetOrderRes, err error){
 	lists := make([]*entities.GetOrderRes, 0)
-	query := `SELECT id, order_id, products, qty, price FROM product_order`
+	query := `SELECT id, order_id, products, qty, price FROM product_order WHERE enable=true`
 
-	// if params.Sdate != "" && params.Edate != "" {
-	// 	query += fmt.Sprintf(" AND DATE(created_at) BETWEEN '%v' AND '%v'", params.Sdate, params.Edate)
-	// }
+	 if params.Sdate != "" && params.Edate != "" {
+	 	query += fmt.Sprintf(" AND DATE(created_at) BETWEEN '%v' AND '%v'", params.Sdate, params.Edate)
+	 }
 
-	// if params.Status != "" {
-	// 	query += fmt.Sprintf(" AND status='%v'", strings.ToLower(params.Status))
-	// }
+	if params.Status != "" {
+		query += fmt.Sprintf(" AND status='%v'", strings.ToLower(params.Status))
+	}
 
 	pages := params.PerPage * (params.Page - 1)
-	query += fmt.Sprintf(` LIMIT %d OFFSET %d`, params.PerPage, pages)
+	query += fmt.Sprintf(` ORDER BY id LIMIT %d OFFSET %d`, params.PerPage, pages)
 
 	rows, err := r.Db.Query(query)
 

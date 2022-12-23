@@ -40,6 +40,8 @@ type OrdersRes2 struct {
 	Price 		int `json:"price" db:"price"`
 	Shipping 	Shipping `json:"shipping_address" db:"shipping_address"`
 	Product 	ProductItem `json:"products" db:"products"`
+	Status		string `json:"status" db:"status"`
+	CreatedAt	time.Time `json:"created_at" db:"created_at"`
 }
 
 type ProductItem struct {
@@ -111,6 +113,8 @@ type GetOrderRes struct {
 	Products	*ProductItem `json:"products" db:"products"`
 	Qty			int	`json:"qty" db:"db"`
 	Price		int `json:"price" db:"price"`	
+	Status		string `json:"status" db:"status"`
+	CreatedAt	time.Time `json:"created_at" db:"created_at"`
 }
 
 
