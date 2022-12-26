@@ -44,6 +44,15 @@ type OrdersRes2 struct {
 	CreatedAt	time.Time `json:"created_at" db:"created_at"`
 }
 
+type AddressesRes struct {
+	Id			int `json:"id" db:"id"`
+	Shipping 	Shipping `json:"shipping_address" db:"shipping_address"`
+	QTY			int `json:"qty" db:"qty"`
+	Price		int `json:"price" db:"price"`
+	Status		string `json:"status" db:"status"`
+	CreatedAt	time.Time `json:"created_at" db:"created_at"`
+}
+
 type ProductItem struct {
 	Item		[]Product `json:"item"`
 }
