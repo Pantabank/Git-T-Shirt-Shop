@@ -64,7 +64,7 @@ func (r *ordersRepo) CreateOrders(req *entities.OrdersReq2) (*entities.OrdersRes
 	}
 
 	collections["item"] = append(collections["item"], product...)
-	r.UpdateOrders(totalQty, &totalPrice, order.OrderID) 
+	r.UpdateOrders(totalQty, totalPrice, order.OrderID) 
 	pd := entities.OrdersRes2{Id: order.Id, OrderID: order.OrderID, Qty: totalQty, Price: totalPrice, Shipping:  order.Shipping, Product: entities.ProductItem{product}, Status: "placed_order", CreatedAt:times  }
 	fmt.Println(collections)
 	return &pd, nil
@@ -102,7 +102,7 @@ func (r *ordersRepo) GetOrderID(address *entities.Shipping)(*entities.AddressesR
 	return addresses, nil
 }
 
-func (r *ordersRepo) UpdateOrders(qty int, price *int, order_id int) error {
+func (r *ordersRepo) UpdateOrders(qty int, price int, order_id int) error {
 	query := `
 		UPDATE orders SET qty=$1, price=$2, status=$3, created_at=$4 WHERE id=$5
 	`
@@ -118,18 +118,22 @@ func (r *ordersRepo) UpdateOrders(qty int, price *int, order_id int) error {
 
 func (r *ordersRepo) GetOrder(params *entities.QueryParams) (list []*entities.GetOrderRes, err error){
 	lists := make([]*entities.GetOrderRes, 0)
-	query := `SELECT id, order_id, products, qty, price FROM product_order WHERE enable=true`
+	query := `SELECT o.id, o.shipping_address, o.qty, o.price, o.status, o.created_at AS shipping_address, array_agg(po.products) 
+	FROM orders o 
+	LEFT JOIN product_order po ON o.id = po.order_id
+	WHERE enable=true
+	`
 
 	 if params.Sdate != "" && params.Edate != "" {
-	 	query += fmt.Sprintf(" AND DATE(created_at) BETWEEN '%v' AND '%v'", params.Sdate, params.Edate)
+	 	query += fmt.Sprintf(" AND DATE(o.created_at) BETWEEN '%v' AND '%v'", params.Sdate, params.Edate)
 	 }
 
 	if params.Status != "" {
-		query += fmt.Sprintf(" AND status='%v'", strings.ToLower(params.Status))
+		query += fmt.Sprintf(" AND o.status='%v'", strings.ToLower(params.Status))
 	}
 
 	pages := params.PerPage * (params.Page - 1)
-	query += fmt.Sprintf(` ORDER BY id LIMIT %d OFFSET %d`, params.PerPage, pages)
+	query += fmt.Sprintf(` GROUP BY o.id ORDER BY id LIMIT %d OFFSET %d`, params.PerPage, pages)
 
 	rows, err := r.Db.Query(query)
 
@@ -138,18 +142,20 @@ func (r *ordersRepo) GetOrder(params *entities.QueryParams) (list []*entities.Ge
 	}
 	defer rows.Close()
 
+
 	for rows.Next(){
 		orders := new(entities.GetOrderRes)
-		fmt.Println(params.Page)
-		err := rows.Scan(&orders.ID, &orders.OrderID, &orders.Products, &orders.Qty, &orders.Price)
+		err := rows.Scan(&orders.ID, &orders.Shipping, &orders.Qty, &orders.Price, &orders.Status, &orders.CreatedAt, &orders.Product)
 		if err != nil{
 			return nil, err
 		}
 		lists = append(lists, orders)
 	}
+	
 	err = rows.Err()
 	if err != nil {
 		return nil, err
 	}
+
 	return lists, nil
 }

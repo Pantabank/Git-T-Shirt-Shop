@@ -118,12 +118,23 @@ type AddressItem struct {
 
 type GetOrderRes struct {
 	ID			int `json:"id" db:"id"`
-	OrderID		int `json:"order_id" db:"order_id"`
-	Products	*ProductItem `json:"products" db:"products"`
-	Qty			int	`json:"qty" db:"db"`
+	Qty			int	`json:"qty" db:"qty"`
 	Price		int `json:"price" db:"price"`	
+	Shipping	Shipping `json:"shipping_address" db:"shipping_address"`
+	Product		string `json:"array_agg" db:"array_agg"`
 	Status		string `json:"status" db:"status"`
 	CreatedAt	time.Time `json:"created_at" db:"created_at"`
+}
+
+type GetProduct struct {
+	Id	int `json:"id" db:"id"`
+	Gender	string `json:"gender" db:"gender"`
+	StyleType	string `json:"style_type" db:"style_type"`
+	StyleDetail	string `json:"style_detail" db:"style_detail"`
+	Size	string `json:"size" db:"size"`
+	Price	float64 `json:"price" db:"price"`
+	Qty	int `json:"qty" db:"qty"`
+	TotalPrice float64 `json:"total_price" db:"total_price"`
 }
 
 
@@ -145,6 +156,18 @@ func (s Shipping) Value() (driver.Value, error) {
 }
 
 func (s *Shipping) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &s)
+}
+
+func (s GetProduct) Value() (driver.Value, error) {
+	return json.Marshal(s)
+}
+
+func (s *GetProduct) Scan(value interface{}) error {
 	b, ok := value.([]byte)
 	if !ok {
 		return errors.New("type assertion to []byte failed")
