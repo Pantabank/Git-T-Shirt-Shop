@@ -8,6 +8,7 @@ type Configs struct {
 type Fiber struct {
 	Host string
 	Port string
+	// Port *string
 }
 
 // Database
