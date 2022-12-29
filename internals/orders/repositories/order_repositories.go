@@ -40,9 +40,28 @@ func (r *ordersRepo) CreateOrders(req *entities.OrdersReq2) (*entities.OrdersRes
 
 	for _, v := range req.Product.Item {
 		productRes, err := r.QueryCart(v.Id)
-		p := entities.Product{Id: productRes.Id, Gender: strings.ToLower(productRes.Gender), StyleType: strings.ToLower(productRes.StyleType), StyleDetail: productRes.StyleDetail, Size: strings.ToLower(productRes.Size), Price: productRes.Price, Qty: v.Qty, TotalPrice: productRes.Price * float64(v.Qty)}
+		// p := entities.Product{
+		// 	Id:          productRes.Id,
+		// 	Gender:      strings.ToLower(productRes.Gender),
+		// 	StyleType:   strings.ToLower(productRes.StyleType),
+		// 	StyleDetail: productRes.StyleDetail,
+		// 	Size:        strings.ToLower(productRes.Size),
+		// 	Price:       productRes.Price,
+		// 	Qty:         v.Qty,
+		// 	TotalPrice:  productRes.Price * float64(v.Qty),
+		// }
 		if err != nil {
 			fmt.Println(err.Error())
+		}
+		p := entities.Product{
+			Id:          productRes.Id,
+			Gender:      strings.ToLower(productRes.Gender),
+			StyleType:   strings.ToLower(productRes.StyleType),
+			StyleDetail: productRes.StyleDetail,
+			Size:        strings.ToLower(productRes.Size),
+			Price:       productRes.Price,
+			Qty:         v.Qty,
+			TotalPrice:  productRes.Price * float64(v.Qty),
 		}
 		totalQty += v.Qty
 		totalPrice += int(productRes.Price) * v.Qty
@@ -64,22 +83,35 @@ func (r *ordersRepo) CreateOrders(req *entities.OrdersReq2) (*entities.OrdersRes
 	}
 
 	collections["item"] = append(collections["item"], product...)
-	r.UpdateOrders(totalQty, totalPrice, order.OrderID) 
-	pd := entities.OrdersRes2{Id: order.Id, OrderID: order.OrderID, Qty: totalQty, Price: totalPrice, Shipping:  order.Shipping, Product: entities.ProductItem{product}, Status: "placed_order", CreatedAt:times  }
+	r.UpdateOrders(totalQty, totalPrice, order.OrderID)
+	// Need to catch an error here
+	pd := entities.OrdersRes2{
+		Id:       order.Id,
+		OrderID:  order.OrderID,
+		Qty:      totalQty,
+		Price:    totalPrice,
+		Shipping: order.Shipping,
+		Product: entities.ProductItem{
+			// Don't forget to fill a name field
+			Item: product,
+		},
+		Status:    "placed_order",
+		CreatedAt: times,
+	}
 	fmt.Println(collections)
 	return &pd, nil
 }
 
-func (r *ordersRepo) QueryCart(id int)(*entities.Product, error){
+func (r *ordersRepo) QueryCart(id int) (*entities.Product, error) {
 	query := `select id, gender, style_type, style_detail, size, price from products where id=$1;`
 	product := new(entities.Product)
-	if err := r.Db.Get(product, query, id) ; err != nil{
+	if err := r.Db.Get(product, query, id); err != nil {
 		return nil, err
 	}
 	return product, nil
 }
 
-func (r *ordersRepo) GetOrderID(address *entities.Shipping)(*entities.AddressesRes, error){
+func (r *ordersRepo) GetOrderID(address *entities.Shipping) (*entities.AddressesRes, error) {
 	query := `
 		INSERT INTO "orders" ("shipping_address", "enable") 
 		VALUES ($1, true)
@@ -109,14 +141,14 @@ func (r *ordersRepo) UpdateOrders(qty int, price int, order_id int) error {
 	times := time.Now()
 	fmt.Println(order_id)
 	_, err := r.Db.Exec(query, qty, price, "placed_order", times, order_id)
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 	return err
 
 }
 
-func (r *ordersRepo) GetOrder(params *entities.QueryParams) (list []*entities.GetOrderRes, err error){
+func (r *ordersRepo) GetOrder(params *entities.QueryParams) (list []*entities.GetOrderRes, err error) {
 	lists := make([]*entities.GetOrderRes, 0)
 	query := `SELECT o.id, o.shipping_address, o.qty, o.price, o.status, o.created_at AS shipping_address, array_agg(po.products) 
 	FROM orders o 
@@ -124,9 +156,9 @@ func (r *ordersRepo) GetOrder(params *entities.QueryParams) (list []*entities.Ge
 	WHERE enable=true
 	`
 
-	 if params.Sdate != "" && params.Edate != "" {
-	 	query += fmt.Sprintf(" AND DATE(o.created_at) BETWEEN '%v' AND '%v'", params.Sdate, params.Edate)
-	 }
+	if params.Sdate != "" && params.Edate != "" {
+		query += fmt.Sprintf(" AND DATE(o.created_at) BETWEEN '%v' AND '%v'", params.Sdate, params.Edate)
+	}
 
 	if params.Status != "" {
 		query += fmt.Sprintf(" AND o.status='%v'", strings.ToLower(params.Status))
@@ -137,21 +169,28 @@ func (r *ordersRepo) GetOrder(params *entities.QueryParams) (list []*entities.Ge
 
 	rows, err := r.Db.Query(query)
 
-	if err != nil{
+	if err != nil {
+		// Don't forget to close a row when an error occur
+		// defer rows.Close()
 		return nil, err
 	}
 	defer rows.Close()
 
-
-	for rows.Next(){
+	for rows.Next() {
 		orders := new(entities.GetOrderRes)
 		err := rows.Scan(&orders.ID, &orders.Shipping, &orders.Qty, &orders.Price, &orders.Status, &orders.CreatedAt, &orders.Product)
-		if err != nil{
+		if err != nil {
 			return nil, err
 		}
 		lists = append(lists, orders)
 	}
-	
+	// Can refactor to this
+	// lists := make([]*entities.GetOrderRes, 0)
+	// if err := r.Db.QueryRowxContext(context.Background(), query).StructScan(lists); err != nil {
+	// 	fmt.Println(err.Error())
+	// 	return nil, err
+	// }
+
 	err = rows.Err()
 	if err != nil {
 		return nil, err

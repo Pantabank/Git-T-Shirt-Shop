@@ -17,51 +17,51 @@ func NewOrdersDeliveries(r fiber.Router, ordersUse entities.OrderUsecase) {
 	}
 	r.Post("", deliveries.CreateOrders)
 	r.Get("/filters", deliveries.GetOrder)
+	// No need to define a create or filter because the HTTP method is already tell how that an endpoint works for.
+	// r.Get("/", deliveries.GetOrder)
 }
 
 func (h *ordersController) CreateOrders(c *fiber.Ctx) error {
 	req := new(entities.OrdersReq2)
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(fiber.ErrBadGateway.Code).JSON(fiber.Map{
-			"status": fiber.ErrBadRequest.Message,
+			"status":      fiber.ErrBadRequest.Message,
 			"status_code": fiber.ErrBadRequest.Code,
-			"message": err.Error(),
+			"message":     err.Error(),
 		})
 	}
 
 	if req.Shipping == nil {
 		return c.Status(fiber.ErrBadGateway.Code).JSON(fiber.Map{
-			"status": fiber.ErrBadRequest.Message,
+			"status":      fiber.ErrBadRequest.Message,
 			"status_code": fiber.ErrBadRequest.Code,
-			"message": "non-shipping",
+			"message":     "non-shipping",
 		})
 	}
 
 	if len(req.Product.Item) < 1 {
 		return c.Status(fiber.ErrBadGateway.Code).JSON(fiber.Map{
-			"status": fiber.ErrBadRequest.Message,
+			"status":      fiber.ErrBadRequest.Message,
 			"status_code": fiber.ErrBadRequest.Code,
-			"message": "error product",
+			"message":     "error product",
 		})
 	}
-
-
 
 	res, err := h.OrderUse.CreateOrders(req)
 	if err != nil {
 		return c.Status(fiber.ErrInternalServerError.Code).JSON(fiber.Map{
-			"status": fiber.ErrInternalServerError.Message,
+			"status":      fiber.ErrInternalServerError.Message,
 			"status_code": fiber.ErrInternalServerError.Code,
-			"message": err.Error(),
-			"result": nil,
+			"message":     err.Error(),
+			"result":      nil,
 		})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status": "OK",
-			"status_code": fiber.StatusOK,
-			"message": "",
-			"result":res,
+		"status":      "OK",
+		"status_code": fiber.StatusOK,
+		"message":     "",
+		"result":      res,
 	})
 }
 
@@ -71,10 +71,10 @@ func (h *ordersController) GetOrder(c *fiber.Ctx) error {
 	if err := c.QueryParser(queryParams); err != nil {
 		log.Println(err.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":		"Internal Server Error",
-			"status_code":	fiber.StatusInternalServerError,
-			"message":		err.Error(),
-			"result":		nil,
+			"status":      "Internal Server Error",
+			"status_code": fiber.StatusInternalServerError,
+			"message":     err.Error(),
+			"result":      nil,
 		})
 	}
 
