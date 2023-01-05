@@ -9,6 +9,10 @@ import (
 	_ordersRepository "github.com/pantabank/t-shirts-shop/internals/orders/repositories"
 	_ordersUsecase "github.com/pantabank/t-shirts-shop/internals/orders/usecases"
 
+	_authHttp "github.com/pantabank/t-shirts-shop/internals/auth/deliveries"
+	_authRepository "github.com/pantabank/t-shirts-shop/internals/auth/repositories"
+	_authUsecase "github.com/pantabank/t-shirts-shop/internals/auth/usecases"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -24,6 +28,11 @@ func (s *Server) MapHandlers() error {
 	ordersRepository := _ordersRepository.NewOrdersRepository(s.Db)
 	ordersUsecase := _ordersUsecase.NewOrderUsecase(ordersRepository)
 	_ordersHttp.NewOrdersDeliveries(ordersGroup, ordersUsecase)
+
+	authGroup := v1.Group("/auth")
+	authRepository := _authRepository.NewAuthRepository(s.Db)
+	authUsecase := _authUsecase.NewAuthUsecase(authRepository)
+	_authHttp.NewAuthController(authGroup, s.Cfg, authUsecase)
 
 	s.App.Use(func(c *fiber.Ctx) error {
 		return c.Status(fiber.ErrInternalServerError.Code).JSON(fiber.Map{

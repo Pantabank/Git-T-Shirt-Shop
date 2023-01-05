@@ -28,6 +28,8 @@ func (r *ordersRepo) CreateOrders(req *entities.OrdersReq2) (*entities.OrdersRes
 		RETURNING "id", (select shipping_address from orders where id=$1 ), "order_id";
 	`
 
+	a := new(entities.UsersData)
+	fmt.Println(a)
 	orderid, err := r.GetOrderID(req.Shipping)
 	if err != nil {
 		fmt.Println(err.Error())

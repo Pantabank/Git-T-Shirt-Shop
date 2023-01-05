@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pantabank/t-shirts-shop/internals/entities"
+	"github.com/pantabank/t-shirts-shop/pkg/middlewares"
 )
 
 type ordersController struct {
@@ -16,7 +17,7 @@ func NewOrdersDeliveries(r fiber.Router, ordersUse entities.OrderUsecase) {
 		OrderUse: ordersUse,
 	}
 	r.Post("", deliveries.CreateOrders)
-	r.Get("/filters", deliveries.GetOrder)
+	r.Get("/filters", middlewares.JwtAuthentication("admin"), deliveries.GetOrder)
 }
 
 func (h *ordersController) CreateOrders(c *fiber.Ctx) error {
