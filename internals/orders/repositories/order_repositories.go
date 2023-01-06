@@ -1,8 +1,6 @@
 package repositories
 
 import (
-	//"encoding/json"
-
 	"fmt"
 	"strings"
 	"time"
@@ -21,55 +19,28 @@ func NewOrdersRepository(db *sqlx.DB) entities.OrderRepository {
 	}
 }
 
-func (r *ordersRepo) CreateOrders(req *entities.OrdersReq2) (*entities.OrdersRes2, error) {
+func (r *ordersRepo) AddOrders(order_id, product_id int, product *entities.Product) error {
 	query := `
 		INSERT INTO "product_order"("order_id", product_id, "products")
 		VALUES ($1, $2, $3)
 		RETURNING "id", (select shipping_address from orders where id=$1 ), "order_id";
 	`
 
-	a := new(entities.UsersData)
-	fmt.Println(a)
-	orderid, err := r.GetOrderID(req.Shipping)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	times := time.Now()
-	order := new(entities.OrdersRes2)
-	product := []entities.Product{}
-	collections := make(map[string][]entities.Product)
-	var totalQty, totalPrice int
-
-	for _, v := range req.Product.Item {
-		productRes, err := r.QueryCart(v.Id)
-		p := entities.Product{Id: productRes.Id, Gender: strings.ToLower(productRes.Gender), StyleType: strings.ToLower(productRes.StyleType), StyleDetail: productRes.StyleDetail, Size: strings.ToLower(productRes.Size), Price: productRes.Price, Qty: v.Qty, TotalPrice: productRes.Price * float64(v.Qty)}
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		totalQty += v.Qty
-		totalPrice += int(productRes.Price) * v.Qty
-		product = append(product, p)
-
-		rows, err := r.Db.Queryx(query, orderid.Id, productRes.Id, p)
+	rows, err := r.Db.Queryx(query, order_id, product_id, product)
 
 		if err != nil {
 			fmt.Println(err.Error())
-			return nil, err
+			return nil
 		}
 
 		for rows.Next() {
-			if err := rows.StructScan(order); err != nil {
+			if err := rows.StructScan(new(entities.OrdersRes2)); err != nil {
 				fmt.Println(err.Error())
-				return nil, err
+				return nil
 			}
 		}
-	}
 
-	collections["item"] = append(collections["item"], product...)
-	r.UpdateOrders(totalQty, totalPrice, order.OrderID) 
-	pd := entities.OrdersRes2{Id: order.Id, OrderID: order.OrderID, Qty: totalQty, Price: totalPrice, Shipping:  order.Shipping, Product: entities.ProductItem{product}, Status: "placed_order", CreatedAt:times  }
-	fmt.Println(collections)
-	return &pd, nil
+		return nil
 }
 
 func (r *ordersRepo) QueryCart(id int)(*entities.Product, error){

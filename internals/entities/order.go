@@ -10,13 +10,20 @@ import (
 )
 
 type OrderRepository interface {
-	CreateOrders(req *OrdersReq2)(*OrdersRes2, error)
 	GetOrder(req *QueryParams)([]*GetOrderRes, error)
+	AddOrders(order_id, product_id int, product *Product) error
+	GetOrderID(req *Shipping)(*AddressesRes, error)
+	QueryCart(id int)(*Product, error)
+	UpdateOrders(qty, price, order_id int) error
 }
 
 type OrderUsecase interface {
-	CreateOrders(req *OrdersReq2)(*OrdersRes2, error)
 	GetOrder(req *QueryParams)([]*GetOrderRes, error)
+	CreateOrders(req *OrdersReq2)(*OrdersRes2, error)
+	AddOrders(order_id, product_id int, product *Product) error
+	GetOrderID(req *Shipping)(*AddressesRes, error)
+	QueryCart(id int)(*Product, error)
+	UpdateOrders(qty, price, order_id int) error
 }
 
 type QueryParams struct {
@@ -34,7 +41,6 @@ type OrdersReq2 struct {
 }
 
 type OrdersRes2 struct {
-	Id			int `json:"id" db:"id"`
 	OrderID		int `json:"order_id" db:"order_id"`
 	Qty 		int `json:"qty" db:"qty"`
 	Price 		int `json:"price" db:"price"`
