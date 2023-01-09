@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pantabank/t-shirts-shop/internals/entities"
+	"github.com/pantabank/t-shirts-shop/pkg/middlewares"
 )
 
 type productsController struct {
@@ -15,7 +16,7 @@ func NewProductsDeliveries(r fiber.Router, productsUse entities.ProductUsecase) 
 	deliveries := &productsController{
 		ProductUse: productsUse,
 	}
-	r.Post("/create", deliveries.AddProduct)
+	r.Post("/create", middlewares.JwtAuthentication("admin"), deliveries.AddProduct)
 	r.Get("/filters", deliveries.GetProduct)
 }
 

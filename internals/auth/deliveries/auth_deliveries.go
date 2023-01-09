@@ -1,6 +1,8 @@
 package deliveries
 
 import (
+	"log"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/pantabank/t-shirts-shop/configs"
 	"github.com/pantabank/t-shirts-shop/internals/entities"
@@ -19,6 +21,7 @@ func NewAuthController(r fiber.Router, cfg *configs.Configs, authUse entities.Au
 	}
 
 	r.Post("/login", controller.Login)
+	r.Post("/register", controller.Register)
 	//r.Get("/auth-test", middlewares.JwtAuthentication(), controller.AuthTest)
 }
 
@@ -63,5 +66,37 @@ func (h *authCon) AuthTest(c *fiber.Ctx) error {
 			"id":		id,
 			"username":	username,
 		},
+	})
+}
+
+func (h *authCon) Register(c *fiber.Ctx) error {
+	req := new(entities.RegisterReq)
+
+	if err := c.BodyParser(req); err != nil {
+		log.Println(err.Error())
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":		"Internal Server Error",
+			"status_code":	fiber.StatusInternalServerError,
+			"message":		err.Error(),
+			"result":		nil,
+		})
+	}
+
+	res, err := h.AuthUse.Register(req)
+	if err != nil {
+		log.Println(err.Error())
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":      "Internal Server Error",
+			"status_code": fiber.StatusInternalServerError,
+			"message":     err.Error(),
+			"result":      nil,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":      "OK",
+		"status_code": fiber.StatusOK,
+		"message":     nil,
+		"result":      res,
 	})
 }

@@ -52,15 +52,16 @@ func (r *ordersRepo) QueryCart(id int)(*entities.Product, error){
 	return product, nil
 }
 
-func (r *ordersRepo) GetOrderID(address *entities.Shipping)(*entities.AddressesRes, error){
+func (r *ordersRepo) GetOrderID(address *entities.Shipping, uid any)(*entities.AddressesRes, error){
+
 	query := `
-		INSERT INTO "orders" ("shipping_address", "enable") 
-		VALUES ($1, true)
+		INSERT INTO "orders" ("shipping_address", "enable", customer_id) 
+		VALUES ($1, true, $2)
 		RETURNING id, shipping_address
 	`
 
 	addresses := new(entities.AddressesRes)
-	rows, err := r.Db.Queryx(query, address)
+	rows, err := r.Db.Queryx(query, address, uid)
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -80,7 +81,6 @@ func (r *ordersRepo) UpdateOrders(qty int, price int, order_id int) error {
 		UPDATE orders SET qty=$1, price=$2, status=$3, created_at=$4 WHERE id=$5
 	`
 	times := time.Now()
-	fmt.Println(order_id)
 	_, err := r.Db.Exec(query, qty, price, "placed_order", times, order_id)
 	if err != nil{
 		panic(err)
@@ -91,7 +91,7 @@ func (r *ordersRepo) UpdateOrders(qty int, price int, order_id int) error {
 
 func (r *ordersRepo) GetOrder(params *entities.QueryParams) (list []*entities.GetOrderRes, err error){
 	lists := make([]*entities.GetOrderRes, 0)
-	query := `SELECT o.id, o.shipping_address, o.qty, o.price, o.status, o.created_at AS shipping_address, array_agg(po.products) 
+	query := `SELECT o.id, o.shipping_address, o.qty, o.price, o.status, o.created_at AS shipping_address, concat('{"item":', jsonb_agg(po.products), '}')::jsonb AS orders 
 	FROM orders o 
 	LEFT JOIN product_order po ON o.id = po.order_id
 	WHERE enable=true

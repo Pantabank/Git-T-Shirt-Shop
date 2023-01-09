@@ -12,16 +12,16 @@ import (
 type OrderRepository interface {
 	GetOrder(req *QueryParams)([]*GetOrderRes, error)
 	AddOrders(order_id, product_id int, product *Product) error
-	GetOrderID(req *Shipping)(*AddressesRes, error)
+	GetOrderID(req *Shipping, uid any)(*AddressesRes, error)
 	QueryCart(id int)(*Product, error)
 	UpdateOrders(qty, price, order_id int) error
 }
 
 type OrderUsecase interface {
 	GetOrder(req *QueryParams)([]*GetOrderRes, error)
-	CreateOrders(req *OrdersReq2)(*OrdersRes2, error)
+	CreateOrders(req *OrdersReq2, uid any)(*OrdersRes2, error)
 	AddOrders(order_id, product_id int, product *Product) error
-	GetOrderID(req *Shipping)(*AddressesRes, error)
+	GetOrderID(req *Shipping, uid any)(*AddressesRes, error)
 	QueryCart(id int)(*Product, error)
 	UpdateOrders(qty, price, order_id int) error
 }
@@ -42,6 +42,7 @@ type OrdersReq2 struct {
 
 type OrdersRes2 struct {
 	OrderID		int `json:"order_id" db:"order_id"`
+	CustomerID	any `json:"customer_id"`
 	Qty 		int `json:"qty" db:"qty"`
 	Price 		int `json:"price" db:"price"`
 	Shipping 	Shipping `json:"shipping_address" db:"shipping_address"`
@@ -127,7 +128,7 @@ type GetOrderRes struct {
 	Qty			int	`json:"qty" db:"qty"`
 	Price		int `json:"price" db:"price"`	
 	Shipping	Shipping `json:"shipping_address" db:"shipping_address"`
-	Product		string `json:"array_agg" db:"array_agg"`
+	Product		ProductItem `json:"orders" db:"orders"`
 	Status		string `json:"status" db:"status"`
 	CreatedAt	time.Time `json:"created_at" db:"created_at"`
 }
@@ -142,6 +143,7 @@ type GetProduct struct {
 	Qty	int `json:"qty" db:"qty"`
 	TotalPrice float64 `json:"total_price" db:"total_price"`
 }
+
 
 
 

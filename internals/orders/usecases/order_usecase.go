@@ -19,13 +19,12 @@ func NewOrderUsecase(ordersRepo entities.OrderRepository) entities.OrderUsecase 
 	}
 }
 
-func (u *ordersUse) CreateOrders(req *entities.OrdersReq2)(*entities.OrdersRes2, error) {
-	shipping, err := u.GetOrderID(req.Shipping)
+func (u *ordersUse) CreateOrders(req *entities.OrdersReq2, uid any)(*entities.OrdersRes2, error) {
+
+	shipping, err := u.GetOrderID(req.Shipping, uid)
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(shipping)
 
 	times := time.Now()
 	//order := new(entities.OrdersRes2)
@@ -50,6 +49,7 @@ func (u *ordersUse) CreateOrders(req *entities.OrdersReq2)(*entities.OrdersRes2,
 	u.OrdersRepo.UpdateOrders(totalQty, totalPrice, shipping.Id)
 	pd := entities.OrdersRes2{
 		OrderID: 	shipping.Id,
+		CustomerID: uid,
 		Qty: 		totalQty,
 		Price: 		totalPrice,
 		Shipping: 	shipping.Shipping,
@@ -60,8 +60,8 @@ func (u *ordersUse) CreateOrders(req *entities.OrdersReq2)(*entities.OrdersRes2,
 	return &pd, nil
 }
 
-func (u *ordersUse) GetOrderID(req *entities.Shipping)(*entities.AddressesRes, error) {
-	order, err := u.OrdersRepo.GetOrderID(req)
+func (u *ordersUse) GetOrderID(req *entities.Shipping, uid any)(*entities.AddressesRes, error) {
+	order, err := u.OrdersRepo.GetOrderID(req, uid)
 	if err != nil {
 		return nil, err
 	}

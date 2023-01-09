@@ -24,6 +24,11 @@ CREATE TYPE "statuses" AS ENUM (
   'completed'
 );
 
+CREATE TYPE "roles" AS ENUM (
+  'users',
+  'admin'
+);
+
 CREATE TABLE "products" (
   "id" serial PRIMARY KEY,
   "gender" genders,
@@ -36,13 +41,8 @@ CREATE TABLE "products" (
 
 CREATE TABLE "orders" (
   "id" serial PRIMARY KEY,
-  "shipping_address" JSONB
-);
-
-CREATE TABLE "product_order" (
-  "id" serial PRIMARY KEY,
-  "order_id" int,
-  "products" JSONB,
+  "customer_id" int5555555,
+  "shipping_address" JSONB,
   "qty" int,
   "price" int,
   "enable" bool,
@@ -50,4 +50,22 @@ CREATE TABLE "product_order" (
   "created_at" timestamp
 );
 
+CREATE TABLE "product_order" (
+  "id" serial PRIMARY KEY,
+  "order_id" int,
+  "product_id" int,
+  "products" JSONB
+);
+
+CREATE TABLE "users" (
+  "id" serial PRIMARY KEY,
+  "username" varchar(255),
+  "password" varchar(255),
+  "role" roles
+);
+
 ALTER TABLE "product_order" ADD FOREIGN KEY ("order_id") REFERENCES "orders" ("id");
+
+ALTER TABLE "product_order" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
+
+ALTER TABLE "orders" ADD FOREIGN KEY ("customer_id") REFERENCES "users" ("id");

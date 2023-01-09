@@ -1,9 +1,13 @@
 package deliveries
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/pantabank/t-shirts-shop/internals/entities"
 	"github.com/pantabank/t-shirts-shop/pkg/middlewares"
 )
@@ -16,11 +20,30 @@ func NewOrdersDeliveries(r fiber.Router, ordersUse entities.OrderUsecase) {
 	deliveries := &ordersController{
 		OrderUse: ordersUse,
 	}
-	r.Post("", deliveries.CreateOrders)
+	r.Post("", middlewares.JwtAuthentication("users"), deliveries.CreateOrders)
 	r.Get("/filters", middlewares.JwtAuthentication("admin"), deliveries.GetOrder)
 }
 
 func (h *ordersController) CreateOrders(c *fiber.Ctx) error {
+	accessToken := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
+	secretKey := os.Getenv("JWT_SECRET_KEY")
+	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("error, unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(secretKey), nil
+	})
+	if err != nil {
+		log.Println(err.Error())
+		return c.Status(fiber.ErrUnauthorized.Code).JSON(fiber.Map{
+			"status": 		fiber.ErrUnauthorized.Message,
+			"status_code":	fiber.ErrUnauthorized.Code,
+			"message":		err.Error(),
+			"result":		nil,
+		})
+	}
+	UID := token.Claims.(jwt.MapClaims)["id"]
+
 	req := new(entities.OrdersReq2)
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(fiber.ErrBadGateway.Code).JSON(fiber.Map{
@@ -46,9 +69,7 @@ func (h *ordersController) CreateOrders(c *fiber.Ctx) error {
 		})
 	}
 
-
-
-	res, err := h.OrderUse.CreateOrders(req)
+	res, err := h.OrderUse.CreateOrders(req, UID)
 	if err != nil {
 		return c.Status(fiber.ErrInternalServerError.Code).JSON(fiber.Map{
 			"status": fiber.ErrInternalServerError.Message,

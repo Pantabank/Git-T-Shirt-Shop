@@ -39,3 +39,17 @@ func (u *authUse) Login(cfg *configs.Configs, req *entities.UsersCredentials)(*e
 	}
 	return res, nil
 }
+
+func (u *authUse) Register(req *entities.RegisterReq)(*entities.RegisterRes, error) {
+
+	bytes, err := bcrypt.GenerateFromPassword([]byte(req.Password), 12)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := u.AuthRepo.Register(req, string(bytes))
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}

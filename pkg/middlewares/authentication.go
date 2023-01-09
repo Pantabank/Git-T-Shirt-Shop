@@ -75,7 +75,7 @@ func JwtAuthentication(role string) fiber.Handler {
 	}
 }
 
-func UserData(c *fiber.Ctx)error {
+func UserData(c *fiber.Ctx)(string, error) {
 	accessToken := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
 		
 
@@ -87,6 +87,6 @@ func UserData(c *fiber.Ctx)error {
 			return []byte(secretKey), nil
 		})
 		a := token.Claims.(jwt.MapClaims)["id"]
-		fmt.Println(a)
-		return err
+		fmt.Println("=====>", a)
+		return "aespa", err
 }

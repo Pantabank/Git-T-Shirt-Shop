@@ -61,3 +61,27 @@ func (r *authRepo) FindOneUser(username string)(*entities.UsersData, error){
 	}
 	return res, nil
 }
+
+func (r *authRepo) Register(req *entities.RegisterReq, pass_gen string)(*entities.RegisterRes, error){
+	query := `
+		INSERT INTO "users"("username", "password", "role")
+		VALUES ($1, $2, $3)
+		RETURNING "id", "username", "role";
+	`
+	result := new(entities.RegisterRes)
+	rows, err := r.Db.Queryx(query, req.Username, pass_gen, req.Role)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			return nil, err
+		}
+
+		for rows.Next() {
+			if err := rows.StructScan(result); err != nil {
+				fmt.Println(err.Error())
+				return nil, err
+			}
+		}
+
+		return result, nil
+}
